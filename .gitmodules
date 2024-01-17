@@ -1,0 +1,3 @@
+[submodule "berachain_deploy/my_token/lib/forge-std"]
+	path = berachain_deploy/my_token/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
