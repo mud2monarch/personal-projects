@@ -78,8 +78,22 @@ df2 = (pl.DataFrame(data2['prices'])
     )
 
 df = (
-        df.join(
-            df2,
+        pl.DataFrame(data)
+        # from that df, make two new columns
+        .select(
+            # first column named 'dt' is datetime truncated to day
+            pl.from_epoch('column_0', time_unit='ms').dt.truncate('1d').alias('dt'),
+            # second column named 'btc_vol' is F32 of btc vol
+            col('column_1').cast(pl.Float32).alias('btc_vol')
+        ).join(
+            (
+                pl.DataFrame(data2['prices'])
+                .transpose()
+                .select(
+                    pl.from_epoch('column_0', time_unit='ms').dt.truncate('1d').alias('dt'),
+                    col('column_1').cast(pl.Float32).alias('btc_usd_px')
+                )
+            ),
             on='dt',
             how='left'
         ).select(
