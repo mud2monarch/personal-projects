@@ -2,7 +2,8 @@ select
     evt_tx_from,
     evt_tx_to,
     value/pow(10,18) as value,
-    evt_block_number
+    evt_block_number,
+    contract_address
 from erc20_base.evt_transfer
 where contract_address in (
     0x3e43cB385A6925986e7ea0f0dcdAEc06673d4e10, --AR
