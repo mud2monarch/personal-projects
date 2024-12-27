@@ -6,17 +6,20 @@ import polars as pl
 
 # %%
 csv_files = []
+
+# Put all csvs into a single directory. Here I'm looking @ 2023 data. The files can be nested.
 base_dir = '2023-citibike-tripdata'
 
+# iterate through each folder of the base_dir, and add all paths to a csv file to `csv_files`
 for month in os.listdir(base_dir):
     month_path = os.path.join(base_dir, month)
     if os.path.isdir(month_path):
-        # for file in os.listdir(month_path):
         csv_files.extend(glob.glob(os.path.join(month_path, '*.csv')))
 
 pprint.pprint(csv_files)
 
 # %%
+# defining a schema for the dataset.
 schema = {
     'ride_id': pl.String,
     'rideable_type': pl.Categorical,
@@ -39,12 +42,13 @@ df = pl.read_csv('2023-citibike-tripdata/202301-citibike-tripdata/202301-citibik
 df.head()
 
 # %%
+# additional check 
 valid_lazy_frames = []
 invalid_lazy_frames = []
 
 for path in csv_files:
     try:
-        lf = pl.scan_csv(path)
+        lf = pl.scan_csv(path, schema=schema)
         valid_lazy_frames.append(path)
     except Exception as e:
         invalid_lazy_frames.append(path)
@@ -54,4 +58,5 @@ pprint.pprint(f'length of invalid lazy frames is {len(invalid_lazy_frames)}')
 pprint.pprint(invalid_lazy_frames)
 
 # %%
+# pulls all csvs into a lazyframe then writes everything to a parquet.
 pl.scan_csv(csv_files, schema=schema).sink_parquet('2023-citibike-tripdata.parquet')
