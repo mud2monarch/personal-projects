@@ -80,7 +80,7 @@ async def display_all_models(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await update.message.reply_text(f"common models include \n{model_list}")
 
 async def set_model(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    model = update.message.text
+    model = update.message.text # See https://docs.python-telegram-bot.org/en/stable/telegram.ext.commandhandler.html
     await update.message.reply_text(f"changed the model to {model}.")
 
 if __name__ == '__main__':

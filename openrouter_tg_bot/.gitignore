@@ -1,3 +1,4 @@
 .env
 venv/
 main.ipynb
+.DS_Store
