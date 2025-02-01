@@ -5,3 +5,5 @@ venv
 ad_hoc_queries/cex_data/cex_data.csv
 ad_hoc_queries/cex_data/cex_volume.md
 ad_hoc_queries/cex_data/cex_volumes.ipynb
+
+cli_swap/Northwestern_swap_lesson_plan.md
