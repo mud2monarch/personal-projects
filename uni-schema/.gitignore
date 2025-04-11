@@ -1,0 +1,6 @@
+/target
+service_account_creds.json
+*.txt
+.env
+Cargo.lock
+.DS_Store
