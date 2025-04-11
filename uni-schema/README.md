@@ -29,6 +29,11 @@ cargo build --release
 
 ### With executable
 ```bash
+# free the executable from quarantine
+xattr -d com.apple.quarantine ./uni-schema
+# make the file executable
+chmod +x ./uni-schema
+
 # Collect schemas for specified tables.
 ./uni-schema --tables project.dataset.table1,project.dataset.table2
 
