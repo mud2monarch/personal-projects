@@ -1,4 +1,3 @@
-// @dev TODO: I need to check for next page tokens and handle them
 use clap::Parser;
 use log::{debug, error, info, trace, warn};
 use reqwest::{Client, Response};
@@ -96,12 +95,7 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // ========== Initialization ==========
-    // 1. Set up logging if desired (e.g., env_logger or similar).
-    // 2. Read configuration parameters:
-    //    - Service account credentials file path.
-    //    - The list of project IDs (you mentioned you are a member of two projects).
-    //    - Any other parameters (e.g., output file path for llms.txt).
+
     env_logger::init();
     info!("Starting application");
 
@@ -152,9 +146,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         token.token().unwrap().chars().take(4).collect::<String>()
     );
 
-    // ========== Create an HTTP Client ==========
-    // 7. Create a reqwest client.
-    // 8. Attach the OAuth2 access token to the client's headers (as a Bearer token).
     let mut headers: reqwest::header::HeaderMap = reqwest::header::HeaderMap::new();
     headers.insert(
         reqwest::header::AUTHORIZATION,

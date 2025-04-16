@@ -65,6 +65,16 @@ RUST_LOG=info cargo run -- --output-file my_schemas.txt
 RUST_LOG=info cargo run -- --creds-path /path/to/credentials.json
 ```
 
+### Sample on public datasets
+```bash
+# Export schemas for Google's public ETH Mainnet datsets using executable
+# See https://console.cloud.google.com/marketplace/product/bigquery-public-data/blockchain-analytics-ethereum-mainnet-us.
+RUST_LOG=info ./uni-schema \
+  --creds-path /Users/your.name/Downloads/service_account_creds_zach_hackathon.json \
+  --tables bigquery-public-data.goog_blockchain_ethereum_mainnet_us.transactions,bigquery-public-data.goog_blockchain_ethereum_mainnet_us.logs,bigquery-public-data.goog_blockchain_ethereum_mainnet_us.blocks \
+  --output-file gbq-public-llms.txt
+```
+
 ### Command Line Arguments
 
 - `--tables` (`-t`): Optional but recommended. Comma-separated list of tables in `project.dataset.table` format. Do not separate with spaces.
