@@ -2,6 +2,8 @@
 
 A command-line tool to fetch and document BigQuery table schemas. This tool can collect schema information for all tables in specified projects or for specific tables.
 
+View a [video demo here](https://youtu.be/ytdzjhRwQzY).
+
 ## Prerequisites
 
 - You must run this executable from the command line because you need to provide a list of projects (`--projects`) or tables (`--tables`).
