@@ -257,6 +257,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // start collecting all schemas
+    // 9/28 don't think this needs to be mutably borrowed?
     for table in &mut all_tables {
         let url: String = format!(
             "https://bigquery.googleapis.com/bigquery/v2/projects/{}/datasets/{}/tables/{}",
