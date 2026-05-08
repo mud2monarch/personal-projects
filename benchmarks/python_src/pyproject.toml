@@ -1,0 +1,12 @@
+[project]
+name = "python-src"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "kaleido>=1.2.0",
+    "matplotlib>=3.10.8",
+    "plotly>=6.7.0",
+    "polars>=1.40.0",
+]
