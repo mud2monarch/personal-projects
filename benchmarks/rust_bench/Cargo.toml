@@ -7,4 +7,5 @@ edition = "2024"
 anyhow = "1.0.102"
 csv = "1.4.0"
 kuva = { version = "0.2.0", features = ["cli", "png"] }
+charton = { version = "0.5", features  = ["png", "parallel"]}
 polars = { version = "0.53.0", features = ["lazy", "parquet"] }

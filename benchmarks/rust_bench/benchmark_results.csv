@@ -5,3 +5,9 @@ kuva,1m_histogram,0.011553
 kuva,85k_line,0.658725375
 kuva,50k_scatter,0.12052825
 kuva,1m_histogram,0.011153459
+charton,1m_histogram,0.084296708
+charton,85k_line,0.638452041
+charton,500k_scatter,2.320806125
+kuva,85k_line,0.685548292
+kuva,500k_scatter,1.156130458
+kuva,1m_histogram,0.011759333

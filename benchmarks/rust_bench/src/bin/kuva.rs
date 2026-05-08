@@ -1,7 +1,7 @@
 use anyhow::Result;
 use csv::WriterBuilder;
 use kuva::prelude::*;
-use rust_bench::*;
+use rust_bench::kuva_utils::*;
 use std::fs;
 use std::fs::OpenOptions;
 use std::time::Instant;
@@ -14,7 +14,7 @@ fn main() -> Result<()> {
     let mut writer = WriterBuilder::new().has_headers(true).from_writer(file);
 
     // Begin timing 1
-    let line_data_85k = kuva_line("../data/clean/85k_timeseries.parquet").unwrap();
+    let line_data_85k = line("../data/clean/85k_timeseries.parquet").unwrap();
 
     let start = Instant::now();
     let line_plot = LinePlot::new().with_data(line_data_85k.points);
@@ -30,9 +30,9 @@ fn main() -> Result<()> {
     let line_elapsed = start.elapsed();
     writer.write_record(["kuva", "85k_line", &line_elapsed.as_secs_f64().to_string()])?;
 
-    _ = fs::write("85k_scatter.png", png_bytes)?;
+    _ = fs::write("85k_line.png", png_bytes)?;
 
-    let scatter_plot_data = kuva_scatter("../data/clean/50k_scatter.parquet").unwrap();
+    let scatter_plot_data = scatter("../data/clean/500k_scatter.parquet").unwrap();
 
     // Begin timing 2
     let start = Instant::now();
@@ -52,12 +52,12 @@ fn main() -> Result<()> {
     let scatter_elapsed = start.elapsed();
     writer.write_record([
         "kuva",
-        "50k_scatter",
+        "500k_scatter",
         &scatter_elapsed.as_secs_f64().to_string(),
     ])?;
-    _ = fs::write("50k_scatter.png", png_bytes)?;
+    _ = fs::write("500k_scatter.png", png_bytes)?;
 
-    let hist_data = kuva_hist("../data/clean/1m_histogram.parquet").unwrap();
+    let hist_data = hist("../data/clean/1m_histogram.parquet").unwrap();
 
     // Begin timing 3
     let start = Instant::now();
