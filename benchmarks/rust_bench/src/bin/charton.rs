@@ -10,9 +10,8 @@ fn hist(filepath: &str) -> Result<f64> {
         .select([col("seconds")])
         .collect()?;
 
-    let ds = load_polars_df!(df)?;
-
     let start = Instant::now();
+    let ds = load_polars_df!(df)?;
 
     Chart::build(ds)?
         .mark_hist()?
@@ -33,9 +32,9 @@ fn line(filepath: &str) -> Result<f64> {
         )
         .collect()?;
 
+    let start = Instant::now();
     let ds = load_polars_df!(df)?;
 
-    let start = Instant::now();
     Chart::build(ds)?
         .mark_line()?
         .encode((alt::x("dt_minute"), alt::y("num_rides")))?
@@ -58,9 +57,9 @@ fn scatter(filepath: &str) -> Result<f64> {
         ])
         .collect()?;
 
+    let start = Instant::now();
     let ds = load_polars_df!(df)?;
 
-    let start = Instant::now();
     Chart::build(ds)?
         .mark_point()?
         .configure_point(|c| c.with_size(0.5))

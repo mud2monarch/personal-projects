@@ -11,3 +11,6 @@ charton,500k_scatter,2.320806125
 kuva,85k_line,0.685548292
 kuva,500k_scatter,1.156130458
 kuva,1m_histogram,0.011759333
+plotters,1m_histogram,0.021015167
+plotters,85k_line,0.0128755
+plotters,500k_scatter,0.032595916
