@@ -1,6 +1,9 @@
 venv
 .venv
 .env
+__pycache__
+.python-version
+target/
 
 ad_hoc_queries/cex_data/cex_data.csv
 ad_hoc_queries/cex_data/cex_volume.md
@@ -13,3 +16,4 @@ cli_swap/Northwestern_swap_lesson_plan.md
 ad_hoc_queries/scratch_book.ipynb
 
 benchmarks/data/raw/
+benchmarks/python_src/

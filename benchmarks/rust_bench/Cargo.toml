@@ -1,0 +1,10 @@
+[package]
+name = "rust_bench"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.102"
+csv = "1.4.0"
+kuva = { version = "0.2.0", features = ["cli", "png"] }
+polars = { version = "0.53.0", features = ["lazy", "parquet"] }
