@@ -14,9 +14,6 @@ The libraries I'm testing are:
 | Rust | Charton |
 
 And the test cases are:
-- 85k datapoint timeseries (line)
-- 85k datapoint timeseries (column)
-- 500k datapoint scatter plot
-- 50k datapoint scatter plot
-- 100k datapoint histogram
-- 1m datapoint histogram
+- 1k, 5k, 85k, 170k, and 850k datapoint line charts
+- 2k, 10k, 1m, and 10m datapoint histograms
+- 1k, 5k, 500k, and 5m datapoint scatter plots

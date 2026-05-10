@@ -1,7 +1,12 @@
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Result, anyhow};
 use csv::WriterBuilder;
 use plotters::prelude::*;
-use rust_bench::kuva_utils::{hist, line, scatter};
+use polars::prelude::*;
+use rust_bench::bench_data::{
+    scaled_hist_df, scaled_line_df, scaled_scatter_df, sliced_hist_df, sliced_line_df,
+    sliced_scatter_df,
+};
+use rust_bench::benchmark_io::{run_id, utc_timestamp};
 use std::collections::HashMap;
 use std::fs::OpenOptions;
 use std::time::Instant;
@@ -35,8 +40,8 @@ fn point_bounds(points: &[(f64, f64)]) -> Result<((f64, f64), (f64, f64))> {
     Ok((expand_range(min_x, max_x), expand_range(min_y, max_y)))
 }
 
-fn histogram(filepath: &str) -> Result<f64> {
-    let values = hist(filepath)?;
+fn histogram(df: &DataFrame, output_name: &str) -> Result<f64> {
+    let values: Vec<f64> = df.column("seconds")?.f64()?.into_no_null_iter().collect();
     let bin_count = 60usize;
 
     let mut iter = values.iter().copied();
@@ -64,7 +69,7 @@ fn histogram(filepath: &str) -> Result<f64> {
 
     let start = Instant::now();
 
-    let root = BitMapBackend::new("plotters_histogram.png", OUTPUT_SIZE).into_drawing_area();
+    let root = BitMapBackend::new(output_name, OUTPUT_SIZE).into_drawing_area();
     root.fill(&WHITE)?;
 
     let mut chart = ChartBuilder::on(&root)
@@ -91,13 +96,23 @@ fn histogram(filepath: &str) -> Result<f64> {
     Ok(start.elapsed().as_secs_f64())
 }
 
-fn line_chart(filepath: &str) -> Result<f64> {
-    let line_data = line(filepath)?;
-    let ((min_x, max_x), (min_y, max_y)) = point_bounds(&line_data.points)?;
+fn line_chart(df: &DataFrame, output_name: &str) -> Result<f64> {
+    let points: Vec<(f64, f64)> = df
+        .column("unix_s")?
+        .f64()?
+        .into_no_null_iter()
+        .zip(
+            df.column("num_rides")?
+                .u32()?
+                .into_no_null_iter()
+                .map(|value| value as f64),
+        )
+        .collect();
+    let ((min_x, max_x), (min_y, max_y)) = point_bounds(&points)?;
 
     let start = Instant::now();
 
-    let root = BitMapBackend::new("plotters_line.png", OUTPUT_SIZE).into_drawing_area();
+    let root = BitMapBackend::new(output_name, OUTPUT_SIZE).into_drawing_area();
     root.fill(&WHITE)?;
 
     let mut chart = ChartBuilder::on(&root)
@@ -113,24 +128,30 @@ fn line_chart(filepath: &str) -> Result<f64> {
         .y_desc("Number of rides")
         .draw()?;
 
-    chart.draw_series(LineSeries::new(line_data.points.iter().copied(), &BLUE))?;
+    chart.draw_series(LineSeries::new(points.iter().copied(), &BLUE))?;
 
     root.present()?;
 
     Ok(start.elapsed().as_secs_f64())
 }
 
-fn scatter_chart(filepath: &str) -> Result<f64> {
-    let scatter_data = scatter(filepath)?;
-    let labels = scatter_data
-        .color_by
-        .as_ref()
-        .context("scatter plot labels are missing")?;
-    let ((min_x, max_x), (min_y, max_y)) = point_bounds(&scatter_data.points)?;
+fn scatter_chart(df: &DataFrame, output_name: &str) -> Result<f64> {
+    let labels = df
+        .column("rideable_type")?
+        .str()?
+        .into_no_null_iter()
+        .collect::<Vec<_>>();
+    let points: Vec<(f64, f64)> = df
+        .column("distance")?
+        .f64()?
+        .into_no_null_iter()
+        .zip(df.column("duration_seconds")?.f64()?.into_no_null_iter())
+        .collect();
+    let ((min_x, max_x), (min_y, max_y)) = point_bounds(&points)?;
 
     let start = Instant::now();
 
-    let root = BitMapBackend::new("plotters_scatter.png", OUTPUT_SIZE).into_drawing_area();
+    let root = BitMapBackend::new(output_name, OUTPUT_SIZE).into_drawing_area();
     root.fill(&WHITE)?;
 
     let mut chart = ChartBuilder::on(&root)
@@ -150,13 +171,12 @@ fn scatter_chart(filepath: &str) -> Result<f64> {
     let mut next_index = 0usize;
 
     chart.draw_series(
-        scatter_data
-            .points
+        points
             .iter()
             .copied()
             .zip(labels.iter())
             .map(|((x, y), label)| {
-                let idx = *palette_indexes.entry(label.as_str()).or_insert_with(|| {
+                let idx = *palette_indexes.entry(*label).or_insert_with(|| {
                     let current = next_index;
                     next_index += 1;
                     current
@@ -171,21 +191,91 @@ fn scatter_chart(filepath: &str) -> Result<f64> {
     Ok(start.elapsed().as_secs_f64())
 }
 
+fn write_result(
+    writer: &mut csv::Writer<std::fs::File>,
+    run_id: &str,
+    library: &str,
+    benchmark: &str,
+    result: Result<f64>,
+) -> Result<()> {
+    let ts = utc_timestamp()?;
+    match result {
+        Ok(elapsed) => writer.write_record([
+            run_id,
+            ts.as_str(),
+            library,
+            benchmark,
+            "ok",
+            &elapsed.to_string(),
+            "",
+        ])?,
+        Err(err) => writer.write_record([
+            run_id,
+            ts.as_str(),
+            library,
+            benchmark,
+            "error",
+            "",
+            &err.to_string(),
+        ])?,
+    }
+
+    Ok(())
+}
+
 fn main() -> Result<()> {
+    let run_id = run_id();
     let file = OpenOptions::new()
         .create(true)
         .append(true)
         .open("benchmark_results.csv")?;
     let mut writer = WriterBuilder::new().has_headers(true).from_writer(file);
 
-    let hist_time = histogram("../data/clean/1m_histogram.parquet")?;
-    writer.write_record(["plotters", "1m_histogram", &hist_time.to_string()])?;
+    let line_slice_cases = [("1k_line", 1_000usize), ("5k_line", 5_000usize)];
+    for (label, size) in line_slice_cases {
+        let result = sliced_line_df("../data/clean/85k_timeseries.parquet", size)
+            .and_then(|df| line_chart(&df, &format!("output/plotters_{label}.png")));
+        write_result(&mut writer, run_id.as_str(), "plotters", label, result)?;
+    }
 
-    let line_time = line_chart("../data/clean/85k_timeseries.parquet")?;
-    writer.write_record(["plotters", "85k_line", &line_time.to_string()])?;
+    let line_cases = [
+        ("85k_line", 1usize),
+        ("170k_line", 2usize),
+        ("850k_line", 10usize),
+    ];
+    for (label, scale) in line_cases {
+        let result = scaled_line_df("../data/clean/85k_timeseries.parquet", scale)
+            .and_then(|df| line_chart(&df, &format!("output/plotters_{label}.png")));
+        write_result(&mut writer, run_id.as_str(), "plotters", label, result)?;
+    }
 
-    let scatter_time = scatter_chart("../data/clean/500k_scatter.parquet")?;
-    writer.write_record(["plotters", "500k_scatter", &scatter_time.to_string()])?;
+    let hist_slice_cases = [("2k_histogram", 2_000usize), ("10k_histogram", 10_000usize)];
+    for (label, size) in hist_slice_cases {
+        let result = sliced_hist_df("../data/clean/1m_histogram.parquet", size)
+            .and_then(|df| histogram(&df, &format!("output/plotters_{label}.png")));
+        write_result(&mut writer, run_id.as_str(), "plotters", label, result)?;
+    }
+
+    let hist_cases = [("1m_histogram", 1usize), ("10m_histogram", 10usize)];
+    for (label, scale) in hist_cases {
+        let result = scaled_hist_df("../data/clean/1m_histogram.parquet", scale)
+            .and_then(|df| histogram(&df, &format!("output/plotters_{label}.png")));
+        write_result(&mut writer, run_id.as_str(), "plotters", label, result)?;
+    }
+
+    let scatter_slice_cases = [("1k_scatter", 1_000usize), ("5k_scatter", 5_000usize)];
+    for (label, size) in scatter_slice_cases {
+        let result = sliced_scatter_df("../data/clean/500k_scatter.parquet", size)
+            .and_then(|df| scatter_chart(&df, &format!("output/plotters_{label}.png")));
+        write_result(&mut writer, run_id.as_str(), "plotters", label, result)?;
+    }
+
+    let scatter_cases = [("500k_scatter", 1usize), ("5m_scatter", 10usize)];
+    for (label, scale) in scatter_cases {
+        let result = scaled_scatter_df("../data/clean/500k_scatter.parquet", scale)
+            .and_then(|df| scatter_chart(&df, &format!("output/plotters_{label}.png")));
+        write_result(&mut writer, run_id.as_str(), "plotters", label, result)?;
+    }
 
     writer.flush()?;
 

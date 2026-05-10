@@ -3352,6 +3352,7 @@ dependencies = [
  "kuva",
  "plotters",
  "polars",
+ "time",
 ]
 
 [[package]]

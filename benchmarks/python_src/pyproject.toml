@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=80"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "python-src"
 version = "0.1.0"
@@ -5,8 +9,20 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "altair>=5.5.0",
     "kaleido>=1.2.0",
     "matplotlib>=3.10.8",
     "plotly>=6.7.0",
     "polars>=1.40.0",
+    "vl-convert-python>=1.8.0",
 ]
+
+[project.scripts]
+bench-all = "main:run_all"
+bench-altair = "main:run_altair"
+bench-matplotlib = "main:run_matplotlib"
+bench-plotly = "main:run_plotly"
+bench-python = "main:main"
+
+[tool.setuptools]
+py-modules = ["altair_bench", "bench_data", "main", "matplotlib_bench", "plotly_bench"]

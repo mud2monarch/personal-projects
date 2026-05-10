@@ -1,78 +1,50 @@
-use std::ops::Div;
-
 use anyhow::Result;
 use polars::prelude::*;
+
 pub struct ScatterPlot {
     pub points: Vec<(f64, f64)>,
     pub color_by: Option<Vec<String>>,
 }
 
-// Kuva expects histogram as a Vec<f64>
-pub fn hist(filepath: &str) -> Result<Vec<f64>> {
-    let df = LazyFrame::scan_parquet(filepath.into(), Default::default())?
-        .select([col("duration")])
-        .with_columns([col("duration")
-            .dt()
-            .total_seconds(true)
-            .alias("duration_seconds")])
-        .collect()?;
+pub struct GroupedScatterPlot {
+    pub classic_points: Vec<(f64, f64)>,
+    pub electric_points: Vec<(f64, f64)>,
+}
 
-    let values: Vec<f64> = df
-        .column("duration_seconds")?
-        .f64()?
-        .into_no_null_iter()
-        .collect();
+pub fn hist_from_df(df: &DataFrame) -> Result<Vec<f64>> {
+    let values: Vec<f64> = df.column("seconds")?.f64()?.into_no_null_iter().collect();
 
     Ok(values)
 }
 
-pub fn scatter(filepath: &str) -> Result<ScatterPlot> {
-    let df = LazyFrame::scan_parquet(filepath.into(), Default::default())?
-        .select([col("rideable_type"), col("distance"), col("duration")])
-        .with_columns([
-            col("duration")
-                .dt()
-                .total_seconds(true)
-                .alias("duration_seconds"),
-            col("rideable_type").cast(DataType::String),
-        ])
-        .collect()?;
+pub fn scatter_from_df(df: &DataFrame) -> Result<GroupedScatterPlot> {
+    let distances = df.column("distance")?.f64()?;
+    let durations = df.column("duration_seconds")?.f64()?;
+    let rideable_types = df.column("rideable_type")?.str()?;
 
-    let points: Vec<(f64, f64)> = df
-        .column("distance")?
-        .f64()?
+    let mut classic_points = Vec::new();
+    let mut electric_points = Vec::new();
+
+    for ((distance, duration), rideable_type) in distances
         .into_no_null_iter()
-        .zip(df.column("duration_seconds")?.f64()?.into_no_null_iter())
-        .collect();
+        .zip(durations.into_no_null_iter())
+        .zip(rideable_types.into_no_null_iter())
+    {
+        let point = (distance, duration);
+        match rideable_type {
+            "classic_bike" => classic_points.push(point),
+            "electric_bike" => electric_points.push(point),
+            _ => {}
+        }
+    }
 
-    let values_labels: Vec<String> = df
-        .column("rideable_type")?
-        .str()?
-        .into_no_null_iter()
-        .map(|s| s.to_string())
-        .collect();
-
-    Ok(ScatterPlot {
-        points,
-        color_by: Some(values_labels),
+    Ok(GroupedScatterPlot {
+        classic_points,
+        electric_points,
     })
 }
 
-pub fn line(filepath: &str) -> Result<ScatterPlot> {
-    let df = LazyFrame::scan_parquet(filepath.into(), Default::default())?
-        .select([col("dt_minute"), col("num_rides")])
-        .with_columns([col("dt_minute")
-            .dt()
-            .timestamp(TimeUnit::Milliseconds)
-            .cast(DataType::Float64)
-            .div(lit(1000.0))
-            .alias("unix_s")])
-        .sort(
-            ["unix_s"],
-            SortMultipleOptions::new().with_order_descending(false),
-        )
-        .collect()?;
-
+pub fn line_from_df(df: &DataFrame) -> Result<ScatterPlot> {
     let points: Vec<(f64, f64)> = df
         .column("unix_s")?
         .f64()?

@@ -10,3 +10,4 @@ kuva = { version = "0.2.0", features = ["cli", "png"] }
 charton = { version = "0.5", features  = ["png", "parallel"]}
 polars = { version = "0.53.0", features = ["lazy", "parquet"] }
 plotters = "0.3"
+time = { version = "0.3", features = ["formatting"] }
