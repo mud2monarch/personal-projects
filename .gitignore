@@ -1,4 +1,4 @@
-venv
+python_src.egg-info/
 .venv
 .env
 __pycache__
